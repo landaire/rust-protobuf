@@ -478,6 +478,16 @@ impl<'a> MessageGen<'a> {
         });
     }
 
+    fn write_impl_mutate(&self, w: &mut CodeWriter) {
+        w.impl_for_block(&"::fazi::Mutable", &format!("{}", self.rust_name()), |w| {
+            w.def_fn("mutate(&mut self, fazi: ::fazi::Fazi)", |w| {
+                for field in self.fields_except_group() {
+                    w.write_line(format!("self.{}.mutate(fazi)", field.rust_name.to_string()));
+                }
+            });
+        });
+    }
+
     fn write_impl_message(&self, w: &mut CodeWriter) {
         w.impl_for_block(
             &format!("{}::Message", protobuf_crate_path(&self.customize.for_elem),),
@@ -667,6 +677,8 @@ impl<'a> MessageGen<'a> {
             self.write_dummy_impl_partial_eq(w);
         }
 
+        w.write_line("");
+        self.write_impl_mutate(w);
         w.write_line("");
         self.write_impl_self(w);
         w.write_line("");

@@ -131,6 +131,8 @@ impl<'a> EnumGen<'a> {
             self.write_impl_hash(w);
         }
         w.write_line("");
+        self.write_impl_enum_mutate(w);
+        w.write_line("");
         self.write_impl_enum(w);
         if !self.lite_runtime {
             w.write_line("");
@@ -251,6 +253,18 @@ impl<'a> EnumGen<'a> {
             }
         });
         w.write_line("];");
+    }
+
+    fn write_impl_enum_mutate(&self, w: &mut CodeWriter) {
+        w.impl_for_block("::fazi::Mutate", &format!("{}", self.type_name), |w| {
+            w.def_fn("mutate(&mut self, fazi: ::fazi::Fazi)", |w| {
+                let enum_impl = format!("{}::Enum", protobuf_crate_path(&self.customize.for_elem));
+                w.write_line(&format!(
+                    "fazi.choose_enum(self.value(), <self as {}>::VALUES)",
+                    enum_impl.as_str()
+                ));
+            });
+        });
     }
 
     fn write_impl_enum(&self, w: &mut CodeWriter) {
