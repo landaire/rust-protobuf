@@ -1427,7 +1427,7 @@ impl<'a> FieldGen<'a> {
         });
     }
 
-    fn has_has(&self) -> bool {
+    pub fn has_has(&self) -> bool {
         match self.kind {
             FieldKind::Repeated(..) | FieldKind::Map(..) => false,
             FieldKind::Singular(SingularField {
@@ -1442,7 +1442,7 @@ impl<'a> FieldGen<'a> {
         }
     }
 
-    fn has_mut(&self) -> bool {
+    pub fn has_mut(&self) -> bool {
         match self.kind {
             FieldKind::Repeated(..) | FieldKind::Map(..) => true,
             // TODO: string should be public, and mut is not needed
@@ -1458,11 +1458,11 @@ impl<'a> FieldGen<'a> {
         }
     }
 
-    fn has_name(&self) -> RustIdent {
+    pub fn has_name(&self) -> RustIdent {
         RustIdent::new(&format!("has_{}", self.rust_name.get()))
     }
 
-    fn set_name(&self) -> RustIdent {
+    pub fn set_name(&self) -> RustIdent {
         RustIdent::new(&format!("set_{}", self.rust_name.get()))
     }
 

@@ -256,14 +256,20 @@ impl<'a> EnumGen<'a> {
     }
 
     fn write_impl_enum_mutate(&self, w: &mut CodeWriter) {
-        w.impl_for_block("::fazi::Mutate", &format!("{}", self.type_name), |w| {
-            w.def_fn("mutate(&mut self, fazi: ::fazi::Fazi)", |w| {
-                let enum_impl = format!("{}::Enum", protobuf_crate_path(&self.customize.for_elem));
-                w.write_line(&format!(
-                    "fazi.choose_enum(self.value(), <self as {}>::VALUES)",
-                    enum_impl.as_str()
-                ));
-            });
+        w.impl_for_block("::fazi::Mutable", &format!("{}", self.type_name), |w| {
+            w.def_fn(
+                "mutate<R: ::fazi::rand::Rng>(&mut self, fazi: &mut ::fazi::Fazi<R>)",
+                |w| {
+                    let enum_impl =
+                        format!("{}::Enum", protobuf_crate_path(&self.customize.for_elem));
+
+                    w.write_line(&format!("use {};", enum_impl));
+                    w.write_line(&format!(
+                        "*self = fazi.choose_enum(self.value(), &<Self as {}>::VALUES[..])",
+                        enum_impl.as_str()
+                    ));
+                },
+            );
         });
     }
 

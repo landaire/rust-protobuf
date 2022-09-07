@@ -5,6 +5,7 @@ use protobuf::reflect::FileDescriptor;
 use protobuf::reflect::MessageDescriptor;
 use protobuf_parse::snake_case;
 
+use super::field::type_ext::TypeExt;
 use crate::customize::ctx::CustomizeElemCtx;
 use crate::customize::ctx::SpecialFieldPseudoDescriptor;
 use crate::customize::rustproto_proto::customize_from_rustproto_for_message;
@@ -480,11 +481,67 @@ impl<'a> MessageGen<'a> {
 
     fn write_impl_mutate(&self, w: &mut CodeWriter) {
         w.impl_for_block(&"::fazi::Mutable", &format!("{}", self.rust_name()), |w| {
-            w.def_fn("mutate(&mut self, fazi: ::fazi::Fazi)", |w| {
-                for field in self.fields_except_group() {
-                    w.write_line(format!("self.{}.mutate(fazi)", field.rust_name.to_string()));
-                }
-            });
+            w.def_fn(
+                "mutate<R: ::fazi::rand::Rng>(&mut self, fazi: &mut ::fazi::Fazi<R>)",
+                |w| {
+                    // w.write_line(&format!(
+                    //     "println!(\"calling mutate() for {}\");",
+                    //     self.rust_name()
+                    // ));
+                    w.write_line("let guard = Self::before_mutate(fazi);");
+                    w.if_stmt("guard.is_none()", |w| {
+                        w.write_line("return;");
+                    });
+
+                    w.write_line(format!("const FIELD_COUNT: usize = {};", self.fields.len()));
+                    w.write_line("let rng = fazi.rng_mut();");
+                    w.write_line("let mutate_fields_count = rng.gen_range(0..=FIELD_COUNT);");
+                    w.if_stmt("mutate_fields_count > 0", |w| {
+                        w.write_line("let index_sampler = ::fazi::rand::seq::index::sample(fazi.rng_mut(), FIELD_COUNT, mutate_fields_count);");
+                        w.for_stmt("index_sampler", "idx", |w| {
+                            w.match_block("idx", |w| {
+                                for (idx, field) in self.fields.iter().enumerate() {
+                                    w.case_block(format!("{}", idx), |w| {
+                                        if field.generate_accessors {
+                                            w.if_stmt(
+                                                &format!(
+                                                    "self.{}() || fazi.rng_mut().gen::<bool>()",
+                                                    field.has_name()
+                                                ),
+                                                |w| {
+                                                    if field.has_mut() {
+                                                        w.write_line(format!(
+                                                            "self.mut_{}().mutate(fazi);",
+                                                            field.rust_name.to_string()
+                                                        ));
+                                                    } else {
+                                                        w.write_line(&format!(
+                                                            "let mut temp = self.{}();",
+                                                            field.rust_name.to_string()
+                                                        ));
+                                                        w.write_line("temp.mutate(fazi);");
+                                                        w.write_line(format!("self.{}(temp);", field.set_name()));
+                                                    }
+                                                },
+                                            );
+                                        } else {
+                                            // w.write_line(&format!(
+                                            //     "println!(\"calling mutate() for {}\");",
+                                            //     field.rust_name.to_string()
+                                            // ));
+                                            w.write_line(format!(
+                                                "self.{}.mutate(fazi);",
+                                                field.rust_name.to_string()
+                                            ));
+                                        }
+                                    });
+                                }
+                                w.case_block("_", |w| w.write_line("unreachable!();"));
+                            })
+                        });
+                    });
+                },
+            );
         });
     }
 
