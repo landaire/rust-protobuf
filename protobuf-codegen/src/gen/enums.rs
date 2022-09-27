@@ -264,6 +264,10 @@ impl<'a> EnumGen<'a> {
                         format!("{}::Enum", protobuf_crate_path(&self.customize.for_elem));
 
                     w.write_line(&format!("use {};", enum_impl));
+                    w.write_line("let guard = fazi.before_mutate(true);");
+                    w.if_stmt("guard.is_none()", |w| {
+                        w.write_line("return;");
+                    });
                     w.write_line(&format!(
                         "*self = fazi.choose_enum(self.value(), &<Self as {}>::VALUES[..])",
                         enum_impl.as_str()

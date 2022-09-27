@@ -488,7 +488,7 @@ impl<'a> MessageGen<'a> {
                     //     "println!(\"calling mutate() for {}\");",
                     //     self.rust_name()
                     // ));
-                    w.write_line("let guard = Self::before_mutate(fazi);");
+                    w.write_line("let guard = fazi.before_mutate(false);");
                     w.if_stmt("guard.is_none()", |w| {
                         w.write_line("return;");
                     });
