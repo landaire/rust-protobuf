@@ -1459,15 +1459,15 @@ impl<'a> FieldGen<'a> {
     }
 
     pub fn has_name(&self) -> RustIdent {
-        RustIdent::new(&format!("has_{}", self.rust_name.get()))
+        RustIdent::new(&format!("has_{}", self.rust_name))
     }
 
     pub fn set_name(&self) -> RustIdent {
-        RustIdent::new(&format!("set_{}", self.rust_name.get()))
+        RustIdent::new(&format!("set_{}", self.rust_name))
     }
 
     fn mut_name(&self) -> RustIdent {
-        RustIdent::new(&format!("mut_{}", self.rust_name.get()))
+        RustIdent::new(&format!("mut_{}", self.rust_name))
     }
 
     fn write_message_field_has(&self, w: &mut CodeWriter) {
